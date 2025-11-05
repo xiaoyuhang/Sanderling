@@ -1,0 +1,24 @@
+🚀 行星开发自动化API服务器启动在端口 12003
+📡 自动化API端点:
+   - POST /api/automation/extractor/restart - 启动提取器重启
+   - POST /api/automation/collection/start - 启动资源收取
+   - GET /api/automation/task/<task_id> - 获取任务状态
+   - POST /api/automation/task/<task_id>/cancel - 取消任务
+   - GET /api/automation/tasks - 获取所有任务
+   - GET /api/automation/stats - 获取自动化统计
+   - GET /api/automation/config/planets - 获取行星配置
+   - POST /api/automation/config/planets - 更新行星配置
+   - GET /api/automation/safety/check - 安全检查
+   - POST /api/automation/emergency/stop - 紧急停止
+   - GET /api/automation/logs/<task_id> - 获取任务日志
+🌐 访问地址: http://localhost:12003
+ * Serving Flask app 'pi_automation_api_server'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:12001
+ * Running on http://10.2.36.13:12001
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 121-387-875

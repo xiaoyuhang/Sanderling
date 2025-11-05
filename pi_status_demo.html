@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Online 行星开发状态识别演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c1445 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #00d4ff;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .demo-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .section-header {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .planet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .planet-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .planet-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .planet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .planet-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .planet-status {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-idle {
+            background: #FF9800;
+            color: white;
+        }
+
+        .status-expired {
+            background: #F44336;
+            color: white;
+        }
+
+        .status-setup {
+            background: #2196F3;
+            color: white;
+        }
+
+        .planet-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .info-label {
+            color: #00d4ff;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .extractors-list {
+            margin-top: 15px;
+        }
+
+        .extractor-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            border-left: 4px solid;
+        }
+
+        .extractor-active {
+            border-left-color: #4CAF50;
+        }
+
+        .extractor-idle {
+            border-left-color: #FF9800;
+        }
+
+        .extractor-expired {
+            border-left-color: #F44336;
+        }
+
+        .extractor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .extractor-name {
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .extractor-status {
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-active {
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        }
+
+        .progress-warning {
+            background: linear-gradient(90deg, #FF9800, #FFC107);
+        }
+
+        .progress-expired {
+            background: linear-gradient(90deg, #F44336, #FF5722);
+        }
+
+        .resource-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 2px;
+            font-size: 0.8em;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #FF9800, #f57c00);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #F44336, #d32f2f);
+        }
+
+        .automation-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .automation-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-large {
+            padding: 12px 24px;
+            font-size: 1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            z-index: 10000;
+            max-width: 300px;
+            word-wrap: break-word;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification-success {
+            background: #4CAF50;
+        }
+
+        .notification-warning {
+            background: #FF9800;
+        }
+
+        .notification-error {
+            background: #F44336;
+        }
+
+        .notification-info {
+            background: #2196F3;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .planet-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .automation-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌍 EVE Online 行星开发状态识别演示</h1>
+        <p>实时监控行星开发状态 | 智能识别提取器状态 | 自动化操作控制</p>
+    </div>
+
+    <div class="container">
+        <!-- 统计概览 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalPlanets">6</div>
+                <div class="stat-label">总行星数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activePlanets">4</div>
+                <div class="stat-label">活跃行星</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalExtractors">18</div>
+                <div class="stat-label">总提取器</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeExtractors">12</div>
+                <div class="stat-label">运行中</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="expiredExtractors">3</div>
+                <div class="stat-label">已过期</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalProduction">2.4M</div>
+                <div class="stat-label">日产值(ISK)</div>
+            </div>
+        </div>
+
+        <!-- 自动化控制面板 -->
+        <div class="automation-panel">
+            <div class="section-header">
+                🤖 自动化控制面板
+            </div>
+            <p style="margin-bottom: 15px; opacity: 0.8;">
+                基于状态识别的智能自动化操作，支持一键重新采集和自动收取功能
+            </p>
+            <div class="automation-buttons">
+                <button class="btn btn-success btn-large" onclick="startBatchRestart()">
+                    ⛏️ 批量重新采集过期提取器
+                </button>
+                <button class="btn btn-primary btn-large" onclick="startAutoCollection()">
+                    🚛 启动自动收取任务
+                </button>
+                <button class="btn btn-warning btn-large" onclick="optimizeAllExtractors()">
+                    🎯 优化所有提取器位置
+                </button>
+                <button class="btn btn-danger btn-large" onclick="emergencyStop()">
+                    ⛔ 紧急停止所有操作
+                </button>
+            </div>
+        </div>
+
+        <!-- 行星状态展示 -->
+        <div class="demo-section">
+            <div class="section-header">
+                🌍 行星开发状态监控
+            </div>
+            
+            <div class="planet-grid" id="planetGrid">
+                <!-- 动态生成行星卡片 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知容器 -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // 模拟行星数据
+        const planetData = [
+            {
+                id: 'planet_1',
+                name: 'Jita IV - Moon 4',
+                type: 'Temperate',
+                system: 'Jita',
+                status: 'active',
+                lastUpdate: '2025-11-05T12:15:00Z',
+                extractors: [
+                    {
+                        id: 'ext_1',
+                        name: '基础金属提取器 #1',
+                        resource: 'Base Metals',
+                        status: 'active',
+                        progress: 75,
+                        timeRemaining: '6小时12分钟',
+                        density: 0.85,
+                        production: '1,200 单位/小时'
+                    },
+                    {
+                        id: 'ext_2',
+                        name: '重金属提取器 #1',
+                        resource: 'Heavy Metals',
+                        status: 'active',
+                        progress: 45,
+                        timeRemaining: '13小时30分钟',
+                        density: 0.72,
+                        production: '800 单位/小时'
+                    },
+                    {
+                        id: 'ext_3',
+                        name: '水性液体提取器 #1',
+                        resource: 'Aqueous Liquids',
+                        status: 'expired',
+                        progress: 100,
+                        timeRemaining: '已过期 2小时',
+                        density: 0.68,
+                        production: '0 单位/小时'
+                    }
+                ],
+                totalProduction: '2,000 单位/小时',
+                estimatedValue: '450,000 ISK/天'
+            },
+            {
+                id: 'planet_2',
+                name: 'Dodixie IX - Moon 20',
+                type: 'Barren',
+                system: 'Dodixie',
+                status: 'active',
+                lastUpdate: '2025-11-05T11:45:00Z',
+                extractors: [
+                    {
+                        id: 'ext_4',
+                        name: '贵金属提取器 #1',
+                        resource: 'Noble Metals',
+                        status: 'active',
+                        progress: 90,
+                        timeRemaining: '2小时45分钟',
+                        density: 0.91,
+                        production: '600 单位/小时'
+                    },
+                    {
+                        id: 'ext_5',
+                        name: '基础金属提取器 #2',
+                        resource: 'Base Metals',
+                        status: 'active',
+                        progress: 25,
+                        timeRemaining: '18小时15分钟',
+                        density: 0.78,
+                        production: '1,100 单位/小时'
+                    }
+                ],
+                totalProduction: '1,700 单位/小时',
+                estimatedValue: '380,000 ISK/天'
+            },
+            {
+                id: 'planet_3',
+                name: 'Amarr VIII (Oris)',
+                type: 'Oceanic',
+                system: 'Amarr',
+                status: 'idle',
+                lastUpdate: '2025-11-05T09:30:00Z',
+                extractors: [
+                    {
+                        id: 'ext_6',
+                        name: '水性液体提取器 #2',
+                        resource: 'Aqueous Liquids',
+                        status: 'expired',
+                        progress: 100,
+                        timeRemaining: '已过期 8小时',
+                        density: 0.82,
+                        production: '0 单位/小时'
+                    },
+                    {
+                        id: 'ext_7',
+                        name: '碳化合物提取器 #1',
+                        resource: 'Carbon Compounds',
+                        status: 'expired',
+                        progress: 100,
+                        timeRemaining: '已过期 5小时',
+                        density: 0.75,
+                        production: '0 单位/小时'
+                    }
+                ],
+                totalProduction: '0 单位/小时',
+                estimatedValue: '0 ISK/天'
+            },
+            {
+                id: 'planet_4',
+                name: 'Rens VI - Moon 8',
+                type: 'Ice',
+                system: 'Rens',
+                status: 'active',
+                lastUpdate: '2025-11-05T12:00:00Z',
+                extractors: [
+                    {
+                        id: 'ext_8',
+                        name: '水性液体提取器 #3',
+                        resource: 'Aqueous Liquids',
+                        status: 'active',
+                        progress: 60,
+                        timeRemaining: '9小时40分钟',
+                        density: 0.88,
+                        production: '1,400 单位/小时'
+                    }
+                ],
+                totalProduction: '1,400 单位/小时',
+                estimatedValue: '320,000 ISK/天'
+            },
+            {
+                id: 'planet_5',
+                name: 'Hek VIII - Moon 12',
+                type: 'Lava',
+                system: 'Hek',
+                status: 'setup',
+                lastUpdate: '2025-11-05T10:15:00Z',
+                extractors: [
+                    {
+                        id: 'ext_9',
+                        name: '基础金属提取器 #3',
+                        resource: 'Base Metals',
+                        status: 'idle',
+                        progress: 0,
+                        timeRemaining: '等待配置',
+                        density: 0.79,
+                        production: '0 单位/小时'
+                    }
+                ],
+                totalProduction: '0 单位/小时',
+                estimatedValue: '0 ISK/天'
+            },
+            {
+                id: 'planet_6',
+                name: 'Oursulaert III - Federation Navy Testing Facilities',
+                type: 'Gas',
+                system: 'Oursulaert',
+                status: 'active',
+                lastUpdate: '2025-11-05T11:20:00Z',
+                extractors: [
+                    {
+                        id: 'ext_10',
+                        name: '贵金属提取器 #2',
+                        resource: 'Noble Metals',
+                        status: 'active',
+                        progress: 35,
+                        timeRemaining: '15小时25分钟',
+                        density: 0.93,
+                        production: '750 单位/小时'
+                    },
+                    {
+                        id: 'ext_11',
+                        name: '碳化合物提取器 #2',
+                        resource: 'Carbon Compounds',
+                        status: 'active',
+                        progress: 80,
+                        timeRemaining: '4小时50分钟',
+                        density: 0.81,
+                        production: '950 单位/小时'
+                    }
+                ],
+                totalProduction: '1,700 单位/小时',
+                estimatedValue: '420,000 ISK/天'
+            }
+        ];
+
+        // 初始化页面
+        function initializePage() {
+            renderPlanetGrid();
+            updateStats();
+            
+            // 模拟实时更新
+            setInterval(() => {
+                updatePlanetProgress();
+                updateStats();
+            }, 5000);
+        }
+
+        // 渲染行星网格
+        function renderPlanetGrid() {
+            const container = document.getElementById('planetGrid');
+            container.innerHTML = '';
+
+            planetData.forEach(planet => {
+                const planetCard = createPlanetCard(planet);
+                container.appendChild(planetCard);
+            });
+        }
+
+        // 创建行星卡片
+        function createPlanetCard(planet) {
+            const card = document.createElement('div');
+            card.className = 'planet-card';
+            card.innerHTML = `
+                <div class="planet-header">
+                    <div class="planet-name">${planet.name}</div>
+                    <div class="planet-status status-${planet.status}">
+                        ${getStatusText(planet.status)}
+                    </div>
+                </div>
+                
+                <div class="planet-info">
+                    <div class="info-item">
+                        <div class="info-label">行星类型</div>
+                        <div>${planet.type}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">星系</div>
+                        <div>${planet.system}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">总产量</div>
+                        <div>${planet.totalProduction}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">预估价值</div>
+                        <div>${planet.estimatedValue}</div>
+                    </div>
+                </div>
+
+                <div class="extractors-list">
+                    <div style="font-weight: bold; color: #00d4ff; margin-bottom: 10px;">
+                        提取器状态 (${planet.extractors.length})
+                    </div>
+                    ${planet.extractors.map(extractor => createExtractorItem(extractor)).join('')}
+                </div>
+
+                <div style="margin-top: 15px; display: flex; gap: 5px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="viewPlanetDetails('${planet.id}')">
+                        📊 详细信息
+                    </button>
+                    <button class="btn btn-success" onclick="restartExpiredExtractors('${planet.id}')">
+                        ⛏️ 重启过期
+                    </button>
+                    <button class="btn btn-warning" onclick="optimizePlanet('${planet.id}')">
+                        🎯 优化位置
+                    </button>
+                </div>
+            `;
+            return card;
+        }
+
+        // 创建提取器项目
+        function createExtractorItem(extractor) {
+            const progressClass = extractor.status === 'active' ? 'progress-active' : 
+                                 extractor.status === 'expired' ? 'progress-expired' : 'progress-warning';
+            
+            return `
+                <div class="extractor-item extractor-${extractor.status}">
+                    <div class="extractor-header">
+                        <div class="extractor-name">${extractor.name}</div>
+                        <div class="extractor-status">${getExtractorStatusText(extractor.status)}</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${progressClass}" style="width: ${extractor.progress}%"></div>
+                    </div>
+                    <div class="resource-info">
+                        <span>📦 ${extractor.resource}</span>
+                        <span>⏱️ ${extractor.timeRemaining}</span>
+                    </div>
+                    <div class="resource-info">
+                        <span>📈 密度: ${extractor.density}</span>
+                        <span>⚡ ${extractor.production}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 更新行星进度
+        function updatePlanetProgress() {
+            planetData.forEach(planet => {
+                planet.extractors.forEach(extractor => {
+                    if (extractor.status === 'active' && extractor.progress < 100) {
+                        // 模拟进度增长
+                        extractor.progress = Math.min(100, extractor.progress + Math.random() * 2);
+                        
+                        // 更新剩余时间
+                        if (extractor.progress >= 100) {
+                            extractor.status = 'expired';
+                            extractor.timeRemaining = '已过期';
+                            extractor.production = '0 单位/小时';
+                        }
+                    }
+                });
+            });
+            
+            renderPlanetGrid();
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const totalPlanets = planetData.length;
+            const activePlanets = planetData.filter(p => p.status === 'active').length;
+            const totalExtractors = planetData.reduce((sum, p) => sum + p.extractors.length, 0);
+            const activeExtractors = planetData.reduce((sum, p) => 
+                sum + p.extractors.filter(e => e.status === 'active').length, 0);
+            const expiredExtractors = planetData.reduce((sum, p) => 
+                sum + p.extractors.filter(e => e.status === 'expired').length, 0);
+            
+            document.getElementById('totalPlanets').textContent = totalPlanets;
+            document.getElementById('activePlanets').textContent = activePlanets;
+            document.getElementById('totalExtractors').textContent = totalExtractors;
+            document.getElementById('activeExtractors').textContent = activeExtractors;
+            document.getElementById('expiredExtractors').textContent = expiredExtractors;
+        }
+
+        // 自动化操作函数
+        function startBatchRestart() {
+            const expiredCount = planetData.reduce((sum, p) => 
+                sum + p.extractors.filter(e => e.status === 'expired').length, 0);
+            
+            if (expiredCount === 0) {
+                showNotification('没有需要重启的过期提取器', 'info');
+                return;
+            }
+            
+            showNotification(`正在重启 ${expiredCount} 个过期提取器...`, 'info');
+            
+            // 模拟重启过程
+            setTimeout(() => {
+                planetData.forEach(planet => {
+                    planet.extractors.forEach(extractor => {
+                        if (extractor.status === 'expired') {
+                            extractor.status = 'active';
+                            extractor.progress = 0;
+                            extractor.timeRemaining = '24小时00分钟';
+                            extractor.production = Math.floor(Math.random() * 1000 + 500) + ' 单位/小时';
+                            extractor.density = Math.random() * 0.3 + 0.7; // 0.7-1.0
+                        }
+                    });
+                });
+                
+                renderPlanetGrid();
+                updateStats();
+                showNotification(`成功重启 ${expiredCount} 个提取器！`, 'success');
+            }, 2000);
+        }
+
+        function startAutoCollection() {
+            const activePlanets = planetData.filter(p => p.status === 'active').length;
+            showNotification(`正在启动自动收取任务，将访问 ${activePlanets} 个活跃行星...`, 'info');
+            
+            setTimeout(() => {
+                showNotification('自动收取任务已完成，收集了 2.3M ISK 价值的资源！', 'success');
+            }, 5000);
+        }
+
+        function optimizeAllExtractors() {
+            showNotification('正在分析所有提取器位置并优化...', 'info');
+            
+            setTimeout(() => {
+                let optimizedCount = 0;
+                planetData.forEach(planet => {
+                    planet.extractors.forEach(extractor => {
+                        if (Math.random() > 0.7) { // 30% 概率优化
+                            extractor.density = Math.min(1.0, extractor.density + Math.random() * 0.2);
+                            optimizedCount++;
+                        }
+                    });
+                });
+                
+                renderPlanetGrid();
+                showNotification(`优化完成！${optimizedCount} 个提取器位置得到改善`, 'success');
+            }, 3000);
+        }
+
+        function emergencyStop() {
+            showNotification('紧急停止所有自动化操作！', 'warning');
+        }
+
+        // 行星操作函数
+        function viewPlanetDetails(planetId) {
+            const planet = planetData.find(p => p.id === planetId);
+            showNotification(`查看 ${planet.name} 的详细信息`, 'info');
+        }
+
+        function restartExpiredExtractors(planetId) {
+            const planet = planetData.find(p => p.id === planetId);
+            const expiredExtractors = planet.extractors.filter(e => e.status === 'expired');
+            
+            if (expiredExtractors.length === 0) {
+                showNotification('该行星没有过期的提取器', 'info');
+                return;
+            }
+            
+            showNotification(`正在重启 ${planet.name} 的 ${expiredExtractors.length} 个过期提取器...`, 'info');
+            
+            setTimeout(() => {
+                expiredExtractors.forEach(extractor => {
+                    extractor.status = 'active';
+                    extractor.progress = 0;
+                    extractor.timeRemaining = '24小时00分钟';
+                    extractor.production = Math.floor(Math.random() * 1000 + 500) + ' 单位/小时';
+                });
+                
+                renderPlanetGrid();
+                updateStats();
+                showNotification(`${planet.name} 的提取器重启完成！`, 'success');
+            }, 1500);
+        }
+
+        function optimizePlanet(planetId) {
+            const planet = planetData.find(p => p.id === planetId);
+            showNotification(`正在优化 ${planet.name} 的提取器位置...`, 'info');
+            
+            setTimeout(() => {
+                planet.extractors.forEach(extractor => {
+                    if (Math.random() > 0.5) {
+                        extractor.density = Math.min(1.0, extractor.density + Math.random() * 0.15);
+                    }
+                });
+                
+                renderPlanetGrid();
+                showNotification(`${planet.name} 优化完成！`, 'success');
+            }, 2000);
+        }
+
+        // 辅助函数
+        function getStatusText(status) {
+            switch (status) {
+                case 'active': return '运行中';
+                case 'idle': return '空闲';
+                case 'expired': return '已过期';
+                case 'setup': return '配置中';
+                default: return status;
+            }
+        }
+
+        function getExtractorStatusText(status) {
+            switch (status) {
+                case 'active': return '运行中';
+                case 'idle': return '空闲';
+                case 'expired': return '已过期';
+                default: return status;
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            // 显示动画
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // 自动隐藏
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(notification);
+                }, 300);
+            }, 4000);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>
